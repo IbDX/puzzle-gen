@@ -65,8 +65,9 @@
 
   <div id="guessSection" style="display:none;">
     <h3>Enter your guess:</h3>
-    <input type="text" id="userGuess" placeholder="e.g. 123456">
+    <input type="text" id="userGuess" placeholder="">
     <button onclick="checkGuess()">Check</button>
+    <button onclick="showAnswer()">Show Answer</button>
     <div class="result" id="result"></div>
   </div>
 
@@ -152,7 +153,13 @@
         const { correctPlace, wrongPlace } = evaluateGuess(secretCode, guess);
         resultDiv.innerText = `❌ Not quite. ${correctPlace} digit(s) in the right place, ${wrongPlace} in the wrong place.`;
       }
+      
     }
+    function showAnswer() {
+  const resultDiv = document.getElementById('result');
+  resultDiv.innerText = `🔓 The secret code is: ${secretCode.join('')}`;
+}
+
   </script>
 
 </body>
