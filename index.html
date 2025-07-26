@@ -2,44 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Code Puzzle Generator</title>
+  <title>Code Puzzle Game</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f4f4f4;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #e0eafc, #cfdef3);
+      padding: 30px;
+      color: #333;
     }
     h1 {
-      color: #333;
+      color: #0078D7;
     }
     label, input, button {
       font-size: 16px;
-      margin: 5px 0;
+      margin: 10px 0;
+    }
+    input[type="number"], input[type="text"] {
+      padding: 8px;
+      width: 100px;
+      margin-right: 10px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #0078D7;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #005fa3;
     }
     .clue {
       background: #fff;
       padding: 10px;
       margin: 10px 0;
       border-left: 4px solid #0078D7;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     .code {
       font-weight: bold;
       color: #d00;
     }
+    .result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
-  <h1>🔐 Code Puzzle Generator</h1>
-  <label for="length">Number of digits:</label>
-  <input type="number" id="length" value="6" min="3" max="10"><br>
-  <label for="clues">Number of clues:</label>
-  <input type="number" id="clues" value="5" min="3" max="10"><br>
+  <h1>🔐 Code Puzzle Game</h1>
+
+  <label>Number of digits:</label>
+  <input type="number" id="length" value="6" min="3" max="10">
+  <label>Number of clues:</label>
+  <input type="number" id="clues" value="5" min="3" max="10">
   <button onclick="generatePuzzle()">Generate Puzzle</button>
 
   <div id="output"></div>
 
+  <div id="guessSection" style="display:none;">
+    <h3>Enter your guess:</h3>
+    <input type="text" id="userGuess" placeholder="e.g. 123456">
+    <button onclick="checkGuess()">Check</button>
+    <div class="result" id="result"></div>
+  </div>
+
   <script>
+    let secretCode = [];
+
     function generateCode(length) {
       const code = [];
       for (let i = 0; i < length; i++) {
@@ -85,13 +118,13 @@
     function generatePuzzle() {
       const length = parseInt(document.getElementById('length').value);
       const clueCount = parseInt(document.getElementById('clues').value);
-      const code = generateCode(length);
+      secretCode = generateCode(length);
       const output = document.getElementById('output');
       output.innerHTML = `<p>This lock has a <strong>${length}-digit</strong> code. Can you crack it using only these hints?</p>`;
 
       for (let i = 0; i < clueCount; i++) {
         const guess = generateGuess(length);
-        const { correctPlace, wrongPlace } = evaluateGuess(code, guess);
+        const { correctPlace, wrongPlace } = evaluateGuess(secretCode, guess);
         let clueText = `${guess.join('')} → `;
         if (correctPlace > 0) clueText += `${correctPlace} number(s) correct and in the right place`;
         if (wrongPlace > 0) clueText += `${correctPlace > 0 ? ', ' : ''}${wrongPlace} correct but in the wrong place`;
@@ -99,7 +132,26 @@
         output.innerHTML += `<div class="clue">${clueText}</div>`;
       }
 
-      output.innerHTML += `<p class="code">(Secret Code: ${code.join('')})</p>`;
+      document.getElementById('guessSection').style.display = 'block';
+      document.getElementById('result').innerText = '';
+    }
+
+    function checkGuess() {
+      const userInput = document.getElementById('userGuess').value.trim();
+      const guess = userInput.split('').map(Number);
+      const resultDiv = document.getElementById('result');
+
+      if (guess.length !== secretCode.length || guess.some(isNaN)) {
+        resultDiv.innerText = `❌ Please enter a valid ${secretCode.length}-digit number.`;
+        return;
+      }
+
+      if (guess.join('') === secretCode.join('')) {
+        resultDiv.innerText = `✅ Correct! You cracked the code: ${secretCode.join('')}`;
+      } else {
+        const { correctPlace, wrongPlace } = evaluateGuess(secretCode, guess);
+        resultDiv.innerText = `❌ Not quite. ${correctPlace} digit(s) in the right place, ${wrongPlace} in the wrong place.`;
+      }
     }
   </script>
 
