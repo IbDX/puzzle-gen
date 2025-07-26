@@ -1,75 +1,107 @@
-function generateCode(length) {
-  const code = [];
-  for (let i = 0; i < length; i++) {
-    code.push(Math.floor(Math.random() * 10));
-  }
-  return code;
-}
-
-function generateGuess(length) {
-  const guess = [];
-  for (let i = 0; i < length; i++) {
-    guess.push(Math.floor(Math.random() * 10));
-  }
-  return guess;
-}
-
-function evaluateGuess(code, guess) {
-  let correctPlace = 0;
-  let wrongPlace = 0;
-  const codeCopy = [...code];
-  const guessCopy = [...guess];
-
-  // First pass: correct digits in correct place
-  for (let i = 0; i < code.length; i++) {
-    if (guess[i] === code[i]) {
-      correctPlace++;
-      codeCopy[i] = guessCopy[i] = null; // Mark as used
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Code Puzzle Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
     }
-  }
+    h1 {
+      color: #333;
+    }
+    label, input, button {
+      font-size: 16px;
+      margin: 5px 0;
+    }
+    .clue {
+      background: #fff;
+      padding: 10px;
+      margin: 10px 0;
+      border-left: 4px solid #0078D7;
+    }
+    .code {
+      font-weight: bold;
+      color: #d00;
+    }
+  </style>
+</head>
+<body>
 
-  // Second pass: correct digits in wrong place
-  for (let i = 0; i < guess.length; i++) {
-    if (guessCopy[i] !== null) {
-      const index = codeCopy.indexOf(guessCopy[i]);
-      if (index !== -1) {
-        wrongPlace++;
-        codeCopy[index] = null; // Mark as used
+  <h1>🔐 Code Puzzle Generator</h1>
+  <label for="length">Number of digits:</label>
+  <input type="number" id="length" value="6" min="3" max="10"><br>
+  <label for="clues">Number of clues:</label>
+  <input type="number" id="clues" value="5" min="3" max="10"><br>
+  <button onclick="generatePuzzle()">Generate Puzzle</button>
+
+  <div id="output"></div>
+
+  <script>
+    function generateCode(length) {
+      const code = [];
+      for (let i = 0; i < length; i++) {
+        code.push(Math.floor(Math.random() * 10));
       }
+      return code;
     }
-  }
 
-  return { correctPlace, wrongPlace };
-}
-
-function generatePuzzle(length = 6, clueCount = 5) {
-  const code = generateCode(length);
-  const clues = [];
-
-  for (let i = 0; i < clueCount; i++) {
-    const guess = generateGuess(length);
-    const { correctPlace, wrongPlace } = evaluateGuess(code, guess);
-    clues.push({
-      guess: guess.join(''),
-      correctPlace,
-      wrongPlace
-    });
-  }
-
-  console.log(`🔐 This lock has a ${length}-digit code. Can you crack it using only these hints?\n`);
-  clues.forEach((clue, index) => {
-    let line = `${clue.guess} → `;
-    if (clue.correctPlace > 0) line += `${clue.correctPlace} number(s) correct and in the right place`;
-    if (clue.wrongPlace > 0) {
-      if (clue.correctPlace > 0) line += `, `;
-      line += `${clue.wrongPlace} correct but in the wrong place`;
+    function generateGuess(length) {
+      const guess = [];
+      for (let i = 0; i < length; i++) {
+        guess.push(Math.floor(Math.random() * 10));
+      }
+      return guess;
     }
-    if (clue.correctPlace === 0 && clue.wrongPlace === 0) line += `Nothing is correct`;
-    console.log(line);
-  });
 
-  console.log(`\n(Secret Code: ${code.join('')})`);
-}
+    function evaluateGuess(code, guess) {
+      let correctPlace = 0;
+      let wrongPlace = 0;
+      const codeCopy = [...code];
+      const guessCopy = [...guess];
 
-// Example: generate a 6-digit puzzle
-generatePuzzle(6);
+      for (let i = 0; i < code.length; i++) {
+        if (guess[i] === code[i]) {
+          correctPlace++;
+          codeCopy[i] = guessCopy[i] = null;
+        }
+      }
+
+      for (let i = 0; i < guess.length; i++) {
+        if (guessCopy[i] !== null) {
+          const index = codeCopy.indexOf(guessCopy[i]);
+          if (index !== -1) {
+            wrongPlace++;
+            codeCopy[index] = null;
+          }
+        }
+      }
+
+      return { correctPlace, wrongPlace };
+    }
+
+    function generatePuzzle() {
+      const length = parseInt(document.getElementById('length').value);
+      const clueCount = parseInt(document.getElementById('clues').value);
+      const code = generateCode(length);
+      const output = document.getElementById('output');
+      output.innerHTML = `<p>This lock has a <strong>${length}-digit</strong> code. Can you crack it using only these hints?</p>`;
+
+      for (let i = 0; i < clueCount; i++) {
+        const guess = generateGuess(length);
+        const { correctPlace, wrongPlace } = evaluateGuess(code, guess);
+        let clueText = `${guess.join('')} → `;
+        if (correctPlace > 0) clueText += `${correctPlace} number(s) correct and in the right place`;
+        if (wrongPlace > 0) clueText += `${correctPlace > 0 ? ', ' : ''}${wrongPlace} correct but in the wrong place`;
+        if (correctPlace === 0 && wrongPlace === 0) clueText += `Nothing is correct`;
+        output.innerHTML += `<div class="clue">${clueText}</div>`;
+      }
+
+      output.innerHTML += `<p class="code">(Secret Code: ${code.join('')})</p>`;
+    }
+  </script>
+
+</body>
+</html>
