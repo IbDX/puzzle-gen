@@ -4,19 +4,36 @@
   <meta charset="UTF-8">
   <title>Code Puzzle Game</title>
   <style>
+    :root {
+      --bg-light: #f0f9ff;
+      --bg-dark: #1e1e2f;
+      --text-light: #333;
+      --text-dark: #f0f0f0;
+      --card-bg-light: white;
+      --card-bg-dark: #2d2d44;
+      --primary: #0078D7;
+    }
+
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #dbeafe, #f0f9ff);
+      background: var(--bg-light);
+      color: var(--text-light);
       margin: 0;
       padding: 0;
       display: flex;
       justify-content: center;
       align-items: flex-start;
       min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .dark-mode {
+      background: var(--bg-dark);
+      color: var(--text-dark);
     }
 
     .container {
-      background: white;
+      background: var(--card-bg-light);
       padding: 30px 40px;
       margin: 40px 0;
       border-radius: 16px;
@@ -24,10 +41,15 @@
       max-width: 500px;
       width: 90%;
       text-align: center;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .dark-mode .container {
+      background: var(--card-bg-dark);
     }
 
     h1 {
-      color: #0078D7;
+      color: var(--primary);
       margin-bottom: 20px;
     }
 
@@ -51,7 +73,7 @@
     button {
       margin: 10px 5px;
       padding: 10px 20px;
-      background-color: #0078D7;
+      background-color: var(--primary);
       color: white;
       border: none;
       border-radius: 6px;
@@ -66,12 +88,16 @@
 
     .clue {
       background: #f9fafb;
-      border-left: 4px solid #0078D7;
+      border-left: 4px solid var(--primary);
       padding: 10px;
       margin: 10px 0;
       border-radius: 6px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       text-align: left;
+    }
+
+    .dark-mode .clue {
+      background: #3a3a55;
     }
 
     .result {
@@ -90,11 +116,30 @@
     .checkbox-container input {
       margin-right: 8px;
     }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #timer {
+      font-weight: bold;
+      margin-top: 10px;
+      color: #555;
+    }
+
+    .dark-mode #timer {
+      color: #ccc;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🔐 Code Puzzle Game</h1>
+    <div class="top-bar">
+      <h1>🔐 Code Puzzle Game</h1>
+      <button onclick="toggleDarkMode()">🌙</button>
+    </div>
 
     <label>Number of digits:</label>
     <input type="number" id="length" value="6" min="3" max="10">
@@ -108,6 +153,7 @@
     </div>
 
     <button onclick="generatePuzzle()">Generate Puzzle</button>
+    <div id="timer">⏱ Time: 0s</div>
 
     <div id="output"></div>
 
@@ -122,6 +168,20 @@
 
   <script>
     let secretCode = [];
+    let timer = 0;
+    let timerInterval = null;
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+
+    function applySavedTheme() {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        document.body.classList.add('dark-mode');
+      }
+    }
 
     function generateCode(length) {
       const code = [];
@@ -198,7 +258,6 @@
 
         const { correctPlace, wrongPlace } = evaluateGuess(secretCode, guess);
 
-        // Control number of "nothing is correct" clues
         if (correctPlace === 0 && wrongPlace === 0 && noMatchClues >= maxNoMatch) continue;
 
         let parts = [];
@@ -215,6 +274,7 @@
 
       document.getElementById('guessSection').style.display = 'block';
       document.getElementById('result').innerText = '';
+      resetTimer();
     }
 
     function checkGuess() {
@@ -228,7 +288,8 @@
       const guess = userInput.split('').map(Number);
 
       if (guess.join('') === secretCode.join('')) {
-        resultDiv.innerText = `✅ Correct! You cracked the code: ${secretCode.join('')}`;
+        resultDiv.innerText = `✅ Correct! You cracked the code in ${timer}s 🎉`;
+        stopTimer();
       } else {
         const { correctPlace, wrongPlace } = evaluateGuess(secretCode, guess);
         resultDiv.innerText = `❌ Not quite. ${correctPlace} digit(s) in the right place, ${wrongPlace} in the wrong place.`;
@@ -237,8 +298,25 @@
 
     function showAnswer() {
       const resultDiv = document.getElementById('result');
-      resultDiv.innerText = `🔓 The secret code is: ${secretCode.join('')}`;
+      resultDiv.innerText = `🔓 The secret code is: ${secretCode.join('')} (You took ${timer}s)`;
+      stopTimer();
     }
+
+    function resetTimer() {
+      stopTimer();
+      timer = 0;
+      document.getElementById('timer').innerText = `⏱ Time: 0s`;
+      timerInterval = setInterval(() => {
+        timer++;
+        document.getElementById('timer').innerText = `⏱ Time: ${timer}s`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+
+    applySavedTheme();
   </script>
 </body>
 </html>
