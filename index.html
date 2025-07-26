@@ -20,4 +20,225 @@
       padding: 30px 40px;
       margin: 40px 0;
       border-radius: 16px;
-      box-shadow: 0 8px 2
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    }
+
+    h1 {
+      color: #0078D7;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: left;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      margin: 10px 5px;
+      padding: 10px 20px;
+      background-color: #0078D7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #005fa3;
+    }
+
+    .clue {
+      background: #f9fafb;
+      border-left: 4px solid #0078D7;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      text-align: left;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      justify-content: left;
+      margin-top: 10px;
+    }
+
+    .checkbox-container input {
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Code Puzzle Game</h1>
+
+    <label>Number of digits:</label>
+    <input type="number" id="length" value="6" min="3" max="10">
+
+    <label>Number of clues:</label>
+    <input type="number" id="clues" value="5" min="3" max="10">
+
+    <div class="checkbox-container">
+      <input type="checkbox" id="allowRepeats" checked>
+      <label for="allowRepeats">Allow repeated digits</label>
+    </div>
+
+    <button onclick="generatePuzzle()">Generate Puzzle</button>
+
+    <div id="output"></div>
+
+    <div id="guessSection" style="display:none;">
+      <h3>Enter your guess:</h3>
+      <input type="text" id="userGuess" placeholder="">
+      <button onclick="checkGuess()">Check</button>
+      <button onclick="showAnswer()">Show Answer</button>
+      <div class="result" id="result"></div>
+    </div>
+  </div>
+
+  <script>
+    let secretCode = [];
+
+    function generateCode(length) {
+      const code = [];
+      const used = new Set();
+      const allowRepeats = document.getElementById('allowRepeats').checked;
+
+      while (code.length < length) {
+        const digit = Math.floor(Math.random() * 10);
+        if (allowRepeats || !used.has(digit)) {
+          code.push(digit);
+          used.add(digit);
+        }
+      }
+      return code;
+    }
+
+    function generateGuess(length) {
+      const guess = [];
+      const used = new Set();
+      const allowRepeats = document.getElementById('allowRepeats').checked;
+
+      while (guess.length < length) {
+        const digit = Math.floor(Math.random() * 10);
+        if (allowRepeats || !used.has(digit)) {
+          guess.push(digit);
+          used.add(digit);
+        }
+      }
+      return guess;
+    }
+
+    function evaluateGuess(code, guess) {
+      let correctPlace = 0;
+      let wrongPlace = 0;
+      const codeCopy = [...code];
+      const guessCopy = [...guess];
+
+      for (let i = 0; i < code.length; i++) {
+        if (guess[i] === code[i]) {
+          correctPlace++;
+          codeCopy[i] = guessCopy[i] = null;
+        }
+      }
+
+      for (let i = 0; i < guess.length; i++) {
+        if (guessCopy[i] !== null) {
+          const index = codeCopy.indexOf(guessCopy[i]);
+          if (index !== -1) {
+            wrongPlace++;
+            codeCopy[index] = null;
+          }
+        }
+      }
+
+      return { correctPlace, wrongPlace };
+    }
+
+    function generatePuzzle() {
+      const length = parseInt(document.getElementById('length').value);
+      const clueCount = parseInt(document.getElementById('clues').value);
+      const output = document.getElementById('output');
+      secretCode = generateCode(length);
+      output.innerHTML = `<p>This lock has a <strong>${length}-digit</strong> code. Can you crack it using only these hints?</p>`;
+
+      let generatedClues = 0;
+      let noMatchClues = 0;
+      const maxNoMatch = Math.floor(length / 2);
+
+      while (generatedClues < clueCount) {
+        let guess;
+        do {
+          guess = generateGuess(length);
+        } while (guess.join('') === secretCode.join(''));
+
+        const { correctPlace, wrongPlace } = evaluateGuess(secretCode, guess);
+
+        // Control number of "nothing is correct" clues
+        if (correctPlace === 0 && wrongPlace === 0 && noMatchClues >= maxNoMatch) continue;
+
+        let parts = [];
+        if (correctPlace > 0) parts.push(`${correctPlace} digit(s) in the right place`);
+        if (wrongPlace > 0) parts.push(`${wrongPlace} correct but in the wrong place`);
+        if (parts.length === 0) {
+          parts.push(`Nothing is correct`);
+          noMatchClues++;
+        }
+
+        output.innerHTML += `<div class="clue">${guess.join('')} → ${parts.join(', ')}</div>`;
+        generatedClues++;
+      }
+
+      document.getElementById('guessSection').style.display = 'block';
+      document.getElementById('result').innerText = '';
+    }
+
+    function checkGuess() {
+      const userInput = document.getElementById('userGuess').value.trim();
+      const resultDiv = document.getElementById('result');
+      if (!/^\d+$/.test(userInput) || userInput.length !== secretCode.length) {
+        resultDiv.innerText = `❌ Please enter a valid ${secretCode.length}-digit number.`;
+        return;
+      }
+
+      const guess = userInput.split('').map(Number);
+
+      if (guess.join('') === secretCode.join('')) {
+        resultDiv.innerText = `✅ Correct! You cracked the code: ${secretCode.join('')}`;
+      } else {
+        const { correctPlace, wrongPlace } = evaluateGuess(secretCode, guess);
+        resultDiv.innerText = `❌ Not quite. ${correctPlace} digit(s) in the right place, ${wrongPlace} in the wrong place.`;
+      }
+    }
+
+    function showAnswer() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerText = `🔓 The secret code is: ${secretCode.join('')}`;
+    }
+  </script>
+</body>
+</html>
